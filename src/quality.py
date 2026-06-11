@@ -39,10 +39,12 @@ def epoch_is_artifact(epoch, ptp_thresh, flat_std=0.5):
     """True if epoch should be rejected.
 
     epoch : ndarray (n_channels, n_samples)
-    Reject if any channel peak-to-peak exceeds ptp_thresh, or any channel is
-    flat (std < flat_std).
+    Reject if the epoch contains any non-finite value (NaN/inf), any channel
+    peak-to-peak exceeds ptp_thresh, or any channel is flat (std < flat_std).
     """
     epoch = np.asarray(epoch, dtype=float)
+    if np.any(~np.isfinite(epoch)):
+        return True
     ptp = np.ptp(epoch, axis=1)
     if np.any(ptp > ptp_thresh):
         return True

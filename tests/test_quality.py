@@ -29,3 +29,8 @@ def test_epoch_is_artifact_high_ptp():
 def test_epoch_is_artifact_flat():
     flat = np.ones((16, 300)) * 3.0
     assert epoch_is_artifact(flat, ptp_thresh=500, flat_std=0.5) is True
+
+def test_epoch_is_artifact_nan():
+    ep = np.random.randn(16, 300)
+    ep[0, 5] = np.nan
+    assert epoch_is_artifact(ep, ptp_thresh=1e9, flat_std=0.5) is True
