@@ -43,3 +43,23 @@ def test_extract_epochs_skips_short_and_control():
                             np.full(EPOCH_LEN, 712)])
     X, y, _ = extract_epochs(signals, codes, expected_len=EPOCH_LEN)
     assert X.shape[0] == 0
+
+def test_load_subject_drops_empty_rows(tmp_path):
+    import pandas as pd
+    from src.config import EEG_CHANNELS
+    from src.eeg_io import load_subject
+    n = 5
+    data = {"times": list(range(n + 2)),
+            "timestamp": [0.01 * i for i in range(n + 2)]}
+    for ch in EEG_CHANNELS:
+        data[ch] = list(range(n)) + [np.nan, np.nan]   # 2 trailing empty rows
+    data["ECG1"] = [0] * (n + 2)
+    data["ECG2"] = [0] * (n + 2)
+    data["code"] = [0] * n + [np.nan, np.nan]
+    df = pd.DataFrame(data)
+    p = tmp_path / "P099_KT88_with_times.csv"
+    df.to_csv(p, index=False)
+    sig, codes, sid = load_subject(p)
+    assert sig.shape[0] == n               # 2 empty rows dropped
+    assert not np.isnan(sig).any()
+    assert sid == "P099"

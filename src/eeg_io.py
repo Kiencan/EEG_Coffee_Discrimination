@@ -64,8 +64,14 @@ def load_subject(csv_path):
     signals : ndarray (n_samples, 16) EEG channels only (ECG dropped)
     codes   : ndarray (n_samples,) int
     subject_id : str e.g. 'P001'
+
+    Rows where all EEG channels are NaN (e.g. trailing empty rows) are dropped
+    so they cannot propagate NaN through filtering.
     """
     df = pd.read_csv(csv_path)
+    eeg_nan_all = df[EEG_CHANNELS].isna().all(axis=1)
+    if eeg_nan_all.any():
+        df = df[~eeg_nan_all].reset_index(drop=True)
     signals = df[EEG_CHANNELS].to_numpy(dtype=float)
     codes = df["code"].to_numpy()
     # codes may contain non-numeric header artifacts; coerce safely

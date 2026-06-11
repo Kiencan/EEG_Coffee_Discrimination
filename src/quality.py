@@ -9,6 +9,7 @@ def check_sampling_regularity(timestamps, fs=100, tol=0.2):
     `tol` is the allowed fraction of samples deviating > 50% from median diff.
     """
     ts = np.asarray(timestamps, dtype=float)
+    ts = ts[np.isfinite(ts)]  # drop NaN/inf timestamps (e.g. trailing empty rows)
     diffs = np.diff(ts)
     median_diff = np.median(diffs)
     median_fs = 1.0 / median_diff if median_diff > 0 else float("inf")

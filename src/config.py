@@ -41,7 +41,7 @@ FLAT_STD_UV = 0.5          # channel/epoch with std below this is "flat"
 # Epoch artifact threshold calibrated from data; fallback fixed value:
 EPOCH_PTP_PERCENTILE = 99  # reject epochs above this ptp percentile
 
-# Subjects excluded from the training set due to data corruption.
-# P014: 2 all-NaN rows, duplicate timestamps (median fs = inf), and 31 epochs
-# (16 Arabica vs expected 15) -- multiple independent corruption signals.
-EXCLUDE_SUBJECTS = {"P014"}
+# Subjects excluded from the training set. Empty now: P014's only defect was
+# 2 trailing all-NaN rows, which load_subject drops automatically; the rest of
+# its data (including one extra Arabica trial) is valid.
+EXCLUDE_SUBJECTS = set()
