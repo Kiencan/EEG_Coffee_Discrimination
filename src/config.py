@@ -41,7 +41,11 @@ FLAT_STD_UV = 0.5          # channel/epoch with std below this is "flat"
 # Epoch artifact threshold calibrated from data; fallback fixed value:
 EPOCH_PTP_PERCENTILE = 99  # reject epochs above this ptp percentile
 
-# Subjects excluded from the training set. Empty now: P014's only defect was
-# 2 trailing all-NaN rows, which load_subject drops automatically; the rest of
-# its data (including one extra Arabica trial) is valid.
-EXCLUDE_SUBJECTS = set()
+# Subjects excluded from the training set.
+# P003-P013 are hardware-clipped (over-amplified): 2.3-17% of samples railed at
+# +/-204.8 uV, vs <0.4% for the clean group -- a 1% saturation threshold cleanly
+# separates the two. Clipping is confounded with subject, so these are excluded
+# to avoid corrupting LOSO. (P014's only defect was 2 trailing all-NaN rows,
+# which load_subject drops automatically; it stays in the clean group.)
+EXCLUDE_SUBJECTS = {"P003", "P004", "P005", "P006", "P007", "P009",
+                    "P010", "P011", "P012", "P013"}
