@@ -1,5 +1,11 @@
 # scripts/18_sensory_regression.py
-"""Predict continuous sensory ratings from band-power EEG (within + cross)."""
+"""Predict continuous sensory ratings from band-power EEG (within + cross).
+
+Within-subject metric = MEAN over subjects of each subject's own CV R2 and
+Pearson r (computed relative to that subject's mean). This isolates genuine
+trial-level prediction; a pooled R2 would be inflated by between-subject mean
+differences. Cross-subject = pooled LOSO.
+"""
 import sys
 from pathlib import Path
 import numpy as np
@@ -24,22 +30,28 @@ def _pipe():
 
 
 def _within_subject(F, y, subjects):
-    preds = np.full(len(y), np.nan)
+    """Mean across subjects of each subject's own within-subject CV R2/Pearson."""
+    r2s, rs = [], []
+    n_used = 0
     for sid in np.unique(subjects):
         m = np.where(subjects == sid)[0]
         if len(m) < 10:
             continue
+        preds = np.full(len(m), np.nan)
         kf = KFold(n_splits=5, shuffle=True, random_state=0)
         for tr, te in kf.split(m):
             model = _pipe()
             model.fit(F[m[tr]], y[m[tr]])
-            preds[m[te]] = model.predict(F[m[te]])
-    ok = np.isfinite(preds)
-    return (r2_score(y[ok], preds[ok]),
-            pearsonr(y[ok], preds[ok])[0], int(ok.sum()))
+            preds[te] = model.predict(F[m[te]])
+        r2s.append(r2_score(y[m], preds))
+        if np.std(preds) > 0:
+            rs.append(pearsonr(y[m], preds)[0])
+        n_used += len(m)
+    return float(np.mean(r2s)), float(np.mean(rs)), n_used
 
 
 def _cross_subject(F, y, subjects):
+    """Pooled LOSO R2 and Pearson r across all held-out subjects."""
     logo = LeaveOneGroupOut()
     preds = np.full(len(y), np.nan)
     for tr, te in logo.split(F, y, groups=subjects):
@@ -65,7 +77,9 @@ def main():
                          "pearson_r": round(float(corr), 3), "n": int(n)})
             print(f"{rating:10s} {level:14s} R2={r2:+.3f} r={corr:+.3f} n={n}")
     pd.DataFrame(rows).to_csv(OUTPUT_DIR / "sensory_regression.csv", index=False)
-    print(f"\nSaved: {OUTPUT_DIR / 'sensory_regression.csv'}")
+    print("\nNote: within_subject R2/r are means over subjects of each subject's")
+    print("own CV (relative to that subject's mean) -- not pooled.")
+    print(f"Saved: {OUTPUT_DIR / 'sensory_regression.csv'}")
 
 
 if __name__ == "__main__":
