@@ -54,3 +54,25 @@ def align_ratings(ordered_codes, subject_sensory_df):
             f"{len(sens_codes)} sensory codes (or different order)")
     return {col: subject_sensory_df[col].to_numpy(dtype=float)
             for col in RATING_COLS}
+
+
+def load_trial_order(xlsx_path, n_trials=45):
+    """Load the canonical per-subject stimulus order from experiment_sequences.
+
+    Reads sheet "Sheet3": header row at index 7 (Trial, Person_1, ...), data
+    from row 8. Returns dict {subject 'P0XX': [code, ...]} with the first
+    `n_trials` codes per person (the delivered trials). Persons are zero-padded
+    (Person_1 -> 'P001').
+    """
+    raw = pd.read_excel(xlsx_path, sheet_name="Sheet3", header=None)
+    header = [str(x) for x in raw.iloc[7].tolist()]
+    order = {}
+    for col, name in enumerate(header):
+        if not name.startswith("Person_"):
+            continue
+        num = int(name.split("_")[1])
+        codes = pd.to_numeric(raw.iloc[8:, col], errors="coerce").dropna()
+        codes = [int(c) for c in codes.tolist()[:n_trials]]
+        if codes:
+            order[f"P{num:03d}"] = codes
+    return order

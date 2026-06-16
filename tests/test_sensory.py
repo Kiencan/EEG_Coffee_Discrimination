@@ -31,3 +31,16 @@ def test_align_ratings_mismatch_raises():
         "valence": [5, 6], "intensity": [6, 5], "favourite": [5, 6]})
     with pytest.raises(ValueError):
         align_ratings([981, 712], dfp)
+
+
+def test_load_trial_order_real_file():
+    from src.sensory import load_trial_order
+    order = load_trial_order(ROOT / "protocol" / "experiment_sequences.xlsx")
+    assert "P019" in order and "P001" in order
+    assert len(order["P019"]) == 45
+    # canonical P019 order (matches the sensory sheet, NOT the EEG markers)
+    assert order["P019"][0] == 712
+    assert order["P019"][1] == 902
+    assert order["P019"][2] == 692
+    # all codes are ints
+    assert all(isinstance(c, int) for c in order["P019"])
