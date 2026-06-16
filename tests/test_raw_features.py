@@ -26,3 +26,14 @@ def test_raw_pca_classifier_runs_loso():
 
     assert 0.0 <= res["accuracy"] <= 1.0
     assert res["confusion_matrix"].shape == (2, 2)
+
+
+def test_make_raw_pca_classifiers_accepts_class_weight():
+    import numpy as np
+    from src.raw_features import make_raw_pca_classifiers
+    clfs = make_raw_pca_classifiers(class_weight="balanced")
+    assert set(clfs) == {"raw_pca_logreg", "raw_pca_linear_svm",
+                         "raw_pca_random_forest"}
+    rng = np.random.RandomState(0)
+    X = rng.randn(40, 50); y = np.array(["A"] * 13 + ["B"] * 27)
+    clfs["raw_pca_logreg"].fit(X, y)          # must fit without error

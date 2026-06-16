@@ -53,3 +53,14 @@ def test_selected_feature_classifier_runs_loso():
 
     assert 0.0 <= res["accuracy"] <= 1.0
     assert res["confusion_matrix"].shape == (2, 2)
+
+
+def test_make_selected_feature_classifiers_accepts_class_weight():
+    import numpy as np
+    from src.engineered_features import make_selected_feature_classifiers
+    clfs = make_selected_feature_classifiers(k=10, class_weight="balanced")
+    assert set(clfs) == {"selected_logreg", "selected_linear_svm",
+                         "selected_random_forest"}
+    rng = np.random.RandomState(0)
+    X = rng.randn(40, 30); y = np.array(["A"] * 13 + ["B"] * 27)
+    clfs["selected_logreg"].fit(X, y)          # must fit without error

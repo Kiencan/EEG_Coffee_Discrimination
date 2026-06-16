@@ -181,22 +181,28 @@ def build_feature_family_matrix(X_epochs, family="engineered"):
     return F, names
 
 
-def make_selected_feature_classifiers(k=80):
-    """Return sklearn pipelines with univariate selection inside each fold."""
+def make_selected_feature_classifiers(k=80, class_weight=None):
+    """Return sklearn pipelines with univariate selection inside each fold.
+
+    `class_weight` is forwarded to the final estimators (e.g. "balanced").
+    """
     return {
         "selected_logreg": make_pipeline(
             StandardScaler(),
             SelectKBest(score_func=f_classif, k=k),
-            LogisticRegression(max_iter=2000, random_state=0),
+            LogisticRegression(max_iter=2000, random_state=0,
+                               class_weight=class_weight),
         ),
         "selected_linear_svm": make_pipeline(
             StandardScaler(),
             SelectKBest(score_func=f_classif, k=k),
-            LinearSVC(max_iter=5000, random_state=0),
+            LinearSVC(max_iter=5000, random_state=0,
+                      class_weight=class_weight),
         ),
         "selected_random_forest": make_pipeline(
             StandardScaler(),
             SelectKBest(score_func=f_classif, k=k),
-            RandomForestClassifier(n_estimators=300, random_state=0),
+            RandomForestClassifier(n_estimators=300, random_state=0,
+                                   class_weight=class_weight),
         ),
     }

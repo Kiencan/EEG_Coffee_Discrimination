@@ -16,12 +16,13 @@ def flatten_epochs(X_epochs):
     return X_epochs.reshape(X_epochs.shape[0], -1)
 
 
-def make_raw_pca_classifiers(n_components=0.95):
+def make_raw_pca_classifiers(n_components=0.95, class_weight=None):
     """Return classifiers for flattened raw epochs with PCA inside each fold.
 
     PCA is part of the pipeline so LOSO evaluation fits it only on the training
     subjects in each fold. `n_components` may be a variance fraction such as
-    0.95 or a fixed integer component count.
+    0.95 or a fixed integer component count. `class_weight` is passed to the
+    final estimators (e.g. "balanced" for imbalanced tasks).
     """
     def pca():
         return PCA(n_components=n_components, svd_solver="full")
@@ -30,16 +31,19 @@ def make_raw_pca_classifiers(n_components=0.95):
         "raw_pca_logreg": make_pipeline(
             StandardScaler(),
             pca(),
-            LogisticRegression(max_iter=2000, random_state=0),
+            LogisticRegression(max_iter=2000, random_state=0,
+                               class_weight=class_weight),
         ),
         "raw_pca_linear_svm": make_pipeline(
             StandardScaler(),
             pca(),
-            LinearSVC(max_iter=5000, random_state=0),
+            LinearSVC(max_iter=5000, random_state=0,
+                      class_weight=class_weight),
         ),
         "raw_pca_random_forest": make_pipeline(
             StandardScaler(),
             pca(),
-            RandomForestClassifier(n_estimators=300, random_state=0),
+            RandomForestClassifier(n_estimators=300, random_state=0,
+                                   class_weight=class_weight),
         ),
     }
