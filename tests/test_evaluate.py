@@ -22,3 +22,17 @@ def test_run_loso_returns_metrics():
     assert res["accuracy"] > 0.8
     assert set(res["per_subject"].keys()) == {"S1", "S2", "S3", "S4"}
     assert res["confusion_matrix"].shape == (2, 2)
+
+def test_run_loso_reports_balanced_accuracy():
+    rng = np.random.RandomState(1)
+    n_per = 30
+    subjects = np.repeat(["S1", "S2", "S3"], n_per)
+    # imbalanced: 10 Control, 20 Coffee per subject
+    y = np.tile(np.array(["Control"] * 10 + ["Coffee"] * 20), 3)
+    X = rng.randn(len(y), 6)
+    X[y == "Coffee", 0] += 2.5
+    clf = make_classifiers()["logreg"]
+    res = run_loso(X, y, subjects, clf, positive_label="Coffee")
+    assert "balanced_accuracy" in res
+    assert 0.0 <= res["balanced_accuracy"] <= 1.0
+    assert res["balanced_accuracy"] > 0.7

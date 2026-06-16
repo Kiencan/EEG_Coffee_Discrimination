@@ -6,8 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (accuracy_score, f1_score, roc_auc_score,
-                             confusion_matrix)
+from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
+                             f1_score, roc_auc_score, confusion_matrix)
 
 
 def make_classifiers():
@@ -28,6 +28,8 @@ def run_loso(X, y, subjects, clf, positive_label="Arabica"):
 
     X : (n_samples, n_features); y : labels; subjects : group ids.
     clf : an unfitted sklearn estimator/pipeline (cloned per fold).
+    Probability scores for AUC use predict_proba, falling back to
+    decision_function (for classifiers like LinearSVC) when needed.
     """
     from sklearn.base import clone
     X = np.asarray(X)
@@ -44,10 +46,18 @@ def run_loso(X, y, subjects, clf, positive_label="Arabica"):
         per_subject[str(subjects[te][0])] = accuracy_score(y[te], pred)
         all_true.extend(y[te])
         all_pred.extend(pred)
-        if hasattr(model, "predict_proba"):
-            classes = list(model.classes_)
+        classes = list(model.classes_)
+        if positive_label in classes and hasattr(model, "predict_proba"):
             pi = classes.index(positive_label)
             all_score.extend(model.predict_proba(X[te])[:, pi])
+        elif positive_label in classes and hasattr(model, "decision_function"):
+            d = np.asarray(model.decision_function(X[te]), dtype=float)
+            if d.ndim == 1:
+                # binary decision_function is oriented toward classes[1]
+                d = d if classes.index(positive_label) == 1 else -d
+                all_score.extend(d)
+            else:
+                all_score.extend([np.nan] * len(te))
         else:
             all_score.extend([np.nan] * len(te))
 
@@ -56,6 +66,7 @@ def run_loso(X, y, subjects, clf, positive_label="Arabica"):
     labels_sorted = sorted(set(y))
     result = {
         "accuracy": accuracy_score(all_true, all_pred),
+        "balanced_accuracy": balanced_accuracy_score(all_true, all_pred),
         "macro_f1": f1_score(all_true, all_pred, average="macro"),
         "confusion_matrix": confusion_matrix(all_true, all_pred,
                                              labels=labels_sorted),
