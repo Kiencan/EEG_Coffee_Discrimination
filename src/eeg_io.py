@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 
-from src.config import (ARABICA_CODES, ROBUSTA_CODES, EEG_CHANNELS, EPOCH_LEN)
+from src.config import (ARABICA_CODES, ROBUSTA_CODES, CONTROL_CODES,
+                        EEG_CHANNELS, EPOCH_LEN)
 
 
 def find_code_runs(codes):
@@ -25,37 +26,48 @@ def label_for_code(code):
     return None
 
 
-def extract_epochs(signals, codes, expected_len=EPOCH_LEN):
-    """Extract coffee-sniff epochs from a session.
+def label_for_task(code, task="coffee"):
+    """Map a stimulus code to a label for a given classification task.
 
-    Parameters
-    ----------
-    signals : ndarray (n_samples, n_channels)
-    codes   : ndarray (n_samples,)
-    expected_len : int, required epoch length in samples
-
-    Returns
-    -------
-    X : ndarray (n_epochs, n_channels, expected_len)
-    y : ndarray of str labels
-    run_codes : ndarray of int stimulus codes
+    task="coffee"            -> Arabica / Robusta / None (original behavior).
+    task="control_vs_coffee" -> Control (C0) / Coffee (C1 or C2) / None.
     """
+    if task == "coffee":
+        return label_for_code(code)
+    if task == "control_vs_coffee":
+        if code in CONTROL_CODES:
+            return "Control"
+        if code in ARABICA_CODES or code in ROBUSTA_CODES:
+            return "Coffee"
+        return None
+    raise ValueError(f"Unknown task: {task}")
+
+
+def extract_epochs_task(signals, codes, task="coffee", expected_len=EPOCH_LEN):
+    """Extract labeled epochs for a given task (see label_for_task)."""
     signals = np.asarray(signals)
     epochs, labels, run_codes = [], [], []
     for code, start, length in find_code_runs(codes):
-        label = label_for_code(code)
+        label = label_for_task(code, task=task)
         if label is None:
             continue
         if length < expected_len:
-            continue  # marker truncated; drop
-        seg = signals[start:start + expected_len]      # (expected_len, n_ch)
-        epochs.append(seg.T)                            # -> (n_ch, expected_len)
+            continue
+        seg = signals[start:start + expected_len]
+        epochs.append(seg.T)
         labels.append(label)
         run_codes.append(code)
     if not epochs:
         return (np.empty((0, signals.shape[1], expected_len)),
                 np.array([], dtype=object), np.array([], dtype=int))
     return np.stack(epochs), np.array(labels, dtype=object), np.array(run_codes)
+
+
+def extract_epochs(signals, codes, expected_len=EPOCH_LEN):
+    """Extract coffee-sniff epochs (Arabica/Robusta). Thin wrapper kept for
+    backward compatibility; delegates to extract_epochs_task(task="coffee")."""
+    return extract_epochs_task(signals, codes, task="coffee",
+                               expected_len=expected_len)
 
 
 def load_subject(csv_path):

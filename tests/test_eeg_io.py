@@ -63,3 +63,35 @@ def test_load_subject_drops_empty_rows(tmp_path):
     assert sig.shape[0] == n               # 2 empty rows dropped
     assert not np.isnan(sig).any()
     assert sid == "P099"
+
+from src.eeg_io import label_for_task, extract_epochs_task
+
+def test_label_for_task_coffee_default():
+    # default task reproduces old coffee labeling
+    assert label_for_task(981) == "Arabica"
+    assert label_for_task(585) == "Robusta"
+    assert label_for_task(712) is None
+
+def test_label_for_task_control_vs_coffee():
+    assert label_for_task(712, task="control_vs_coffee") == "Control"   # C0
+    assert label_for_task(981, task="control_vs_coffee") == "Coffee"    # C1
+    assert label_for_task(585, task="control_vs_coffee") == "Coffee"    # C2
+    assert label_for_task(0, task="control_vs_coffee") is None          # ISI
+    assert label_for_task(1, task="control_vs_coffee") is None          # baseline
+
+def test_extract_epochs_task_control_vs_coffee():
+    from src.config import EPOCH_LEN
+    n_ch = 16
+    rest = np.zeros((4, n_ch))
+    ctrl = np.ones((EPOCH_LEN, n_ch)) * 1.0       # C0 code 712
+    ara = np.ones((EPOCH_LEN, n_ch)) * 2.0        # C1 code 981
+    rob = np.ones((EPOCH_LEN, n_ch)) * 3.0        # C2 code 585
+    signals = np.vstack([rest, ctrl, rest, ara, rest, rob, rest])
+    codes = np.concatenate([
+        np.zeros(4), np.full(EPOCH_LEN, 712), np.zeros(4),
+        np.full(EPOCH_LEN, 981), np.zeros(4),
+        np.full(EPOCH_LEN, 585), np.zeros(4)])
+    X, y, _ = extract_epochs_task(signals, codes, task="control_vs_coffee",
+                                  expected_len=EPOCH_LEN)
+    assert X.shape == (3, n_ch, EPOCH_LEN)
+    assert list(y) == ["Control", "Coffee", "Coffee"]
