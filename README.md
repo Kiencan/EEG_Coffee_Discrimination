@@ -17,9 +17,6 @@ stored in this repo (exceeds GitHub's file size limits). Download it here:
 After downloading, extract it into a `data/` folder at the project root
 (same level as `src/`, `scripts/`).
 
-For data format details, stimulus codes, and quality notes (clipping,
-`EXCLUDE_SUBJECTS`), see [CLAUDE.md](CLAUDE.md).
-
 ## Setup
 
 ```bash
