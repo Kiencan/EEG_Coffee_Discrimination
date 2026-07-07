@@ -1,0 +1,5 @@
+## Acknowledgements
+
+The authors would like to thank all the volunteers who took part in the EEG recording sessions for their patience and willingness to contribute to this research. We are grateful to the staff of the host laboratory for their assistance with participant scheduling, equipment setup, and adherence to the olfactory protocol, and to the institutional ethics committee for their guidance during the protocol approval process. We also thank the coffee suppliers for providing freshly roasted *Coffea arabica* and *Coffea canephora* samples of comparable origin and roast level, which made it possible to keep extrinsic stimulus factors under control across sessions. Finally, the authors acknowledge the developers of the open source scientific Python ecosystem, in particular NumPy, SciPy, and scikit learn, on which the entire processing and evaluation pipeline was built.
+
+This work was supported by [grant or institution name], under project [project code]. The opinions expressed in this paper are those of the authors and do not necessarily reflect the views of the funding bodies. The authors declare no competing financial interests.

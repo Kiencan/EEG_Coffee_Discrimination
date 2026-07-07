@@ -4,3 +4,4 @@ outputs/
 .pytest_cache/
 .pytest_tmp/
 *.npz
+data/
